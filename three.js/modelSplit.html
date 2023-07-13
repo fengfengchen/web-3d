@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>model import</title>
+    <style>
+      @import "/assets/common.css";
+      .ctrls-btn {
+        position: absolute;
+        top: 30px;
+        display: flex;
+        width: 100%;
+        justify-content: center;
+      }
+      .ctrls-btn > div {
+        width: 100px;
+        height: 30px;
+        background-color: #fff;
+        color: #000;
+        line-height: 30px;
+        text-align: center;
+        margin-right: 20px;
+        border-radius: 15px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="ctrls-btn">
+      <div id="dismantling">拆解</div>
+      <div id="reback">还原</div>
+    </div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/lib/three.module.js",
+          "three/addons/": "/lib/jsm/",
+          "utils/": "/utils/",
+          "tween": "/lib/tween.esm.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { resizeRendererToDisplaySize } from "utils/fun.js";
+      import * as TWEEN from "tween";
+
+      let renderRequested = false;
+      // 限制requetAnimation动画执行次数
+      let canRender = true;
+
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      // 控制查看模型的角度
+      camera.position.set(-10, 1, 10);
+
+      const canvas = document.querySelector("#canvas");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      // 定义渲染器的输出编码
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const color = 0xffffff;
+      const intensity = 1;
+      const light = new THREE.DirectionalLight(color, intensity);
+      light.position.set(-1, 2, 4);
+      scene.add(light);
+
+      const loader = new GLTFLoader();
+      loader.load("/assets/models/gltf/a-dismantling.glb", (gltf) => {
+        const model = gltf.scene;
+        console.log(model);
+        // 人为的控制模型显示大小，暂未能找到合适的函数实现
+        model.scale.set(0.8, 0.8, 0.8);
+        scene.add(model);
+        canRender = false;
+        requestAnimationFrame(render);
+      });
+
+      const controls = new OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.target.set(0, 0, 0);
+      controls.update();
+
+      function render() {
+        console.log("render");
+        if (canRender) {
+          requestAnimationFrame(render);
+        }
+        renderRequested = undefined;
+        if (resizeRendererToDisplaySize(renderer)) {
+          const canvas = renderer.domElement;
+          camera.aspect = canvas.clientWidth / canvas.clientHeight;
+          camera.updateProjectionMatrix();
+        }
+        TWEEN.update();
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      function requestRenderIfNotRequested() {
+        // console.log('requestRenderIfNotRequested');
+        // 控制controls change触发次数
+        if (!renderRequested) {
+          renderRequested = true;
+          requestAnimationFrame(render);
+        }
+      }
+      window.addEventListener("resize", requestRenderIfNotRequested);
+      controls.addEventListener("change", requestRenderIfNotRequested);
+      // 移动函数
+      function move(obj, position) {
+        new TWEEN.Tween(obj.position)
+          .to(position, 1000)
+          .onUpdate((val) => {
+            // obj.position.set(val.x || 0, val.y || 0, val.z || 0);
+          })
+          .onComplete((params) => {
+            console.log(params);
+            canRender = false;
+          })
+          .start();
+      }
+      function canRenderFn() {
+        canRender = true;
+        requestAnimationFrame(render);
+      }
+      // 拆解按钮
+      document.getElementById("dismantling").addEventListener("click", () => {
+        canRenderFn();
+        move(scene.getObjectByName("Object_7"), { x: -5 });
+        move(scene.getObjectByName("Object_18"), { x: -5 });
+
+        move(scene.getObjectByName("Object_10"), { x: 5 });
+        move(scene.getObjectByName("Object_11"), { x: 5 });
+        move(scene.getObjectByName("Object_17"), { x: 5 });
+
+        move(scene.getObjectByName("Object_27"), { z: 5 });
+        move(scene.getObjectByName("Object_29"), { z: 5 });
+
+        move(scene.getObjectByName("Object_14"), { z: -5 });
+        move(scene.getObjectByName("Object_16"), { z: -5 });
+
+        move(scene.getObjectByName("Object_29"), { y: 2 });
+      });
+      // 拆解按钮
+      document.getElementById("reback").addEventListener("click", () => {
+        canRenderFn();
+        move(scene.getObjectByName("Object_7"), { x: 0 });
+        move(scene.getObjectByName("Object_18"), { x: 0 });
+
+        move(scene.getObjectByName("Object_10"), { x: 0 });
+        move(scene.getObjectByName("Object_11"), { x: 0 });
+        move(scene.getObjectByName("Object_17"), { x: 0 });
+
+        move(scene.getObjectByName("Object_27"), { z: 0 });
+        move(scene.getObjectByName("Object_29"), { z: 0 });
+
+        move(scene.getObjectByName("Object_14"), { z: 0 });
+        move(scene.getObjectByName("Object_16"), { z: 0 });
+
+        move(scene.getObjectByName("Object_29"), { y: 0 });
+      });
+    </script>
+  </body>
+</html>
