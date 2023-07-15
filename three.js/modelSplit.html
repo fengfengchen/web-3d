@@ -53,8 +53,6 @@
       import * as TWEEN from "tween";
 
       let renderRequested = false;
-      // 限制requetAnimation动画执行次数
-      let canRender = true;
 
       const scene = new THREE.Scene();
 
@@ -80,8 +78,7 @@
         // 人为的控制模型显示大小，暂未能找到合适的函数实现
         model.scale.set(0.8, 0.8, 0.8);
         scene.add(model);
-        canRender = false;
-        requestAnimationFrame(render);
+        render();
       });
 
       const controls = new OrbitControls(camera, canvas);
@@ -91,18 +88,16 @@
 
       function render() {
         console.log("render");
-        if (canRender) {
-          requestAnimationFrame(render);
-        }
+        TWEEN.update();
+        controls.update();
         renderRequested = undefined;
         if (resizeRendererToDisplaySize(renderer)) {
           const canvas = renderer.domElement;
           camera.aspect = canvas.clientWidth / canvas.clientHeight;
           camera.updateProjectionMatrix();
         }
-        TWEEN.update();
-        controls.update();
         renderer.render(scene, camera);
+        requestAnimationFrame(render);
       }
       function requestRenderIfNotRequested() {
         // console.log('requestRenderIfNotRequested');
@@ -112,8 +107,8 @@
           requestAnimationFrame(render);
         }
       }
-      window.addEventListener("resize", requestRenderIfNotRequested);
-      controls.addEventListener("change", requestRenderIfNotRequested);
+      // window.addEventListener("resize", requestRenderIfNotRequested);
+      // controls.addEventListener("change", requestRenderIfNotRequested);
       // 移动函数
       function move(obj, position) {
         new TWEEN.Tween(obj.position)
@@ -121,19 +116,10 @@
           .onUpdate((val) => {
             // obj.position.set(val.x || 0, val.y || 0, val.z || 0);
           })
-          .onComplete((params) => {
-            console.log(params);
-            canRender = false;
-          })
           .start();
-      }
-      function canRenderFn() {
-        canRender = true;
-        requestAnimationFrame(render);
       }
       // 拆解按钮
       document.getElementById("dismantling").addEventListener("click", () => {
-        canRenderFn();
         move(scene.getObjectByName("Object_7"), { x: -5 });
         move(scene.getObjectByName("Object_18"), { x: -5 });
 
@@ -151,7 +137,6 @@
       });
       // 拆解按钮
       document.getElementById("reback").addEventListener("click", () => {
-        canRenderFn();
         move(scene.getObjectByName("Object_7"), { x: 0 });
         move(scene.getObjectByName("Object_18"), { x: 0 });
 
