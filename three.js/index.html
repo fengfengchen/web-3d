@@ -8,9 +8,11 @@
     <style>
       @import "/assets/common.css";
       .items {
+        padding: 50px 0;
+      }
+      .items > div {
         display: flex;
         flex-wrap: wrap;
-        padding: 50px 0;
       }
       .item {
         margin: 0 20px;
@@ -19,12 +21,21 @@
   </head>
   <body>
     <div class="items">
-      <a href="./create-a-scene.html" class="item">创建一个场景</a>
-      <a href="./line.html" class="item">绘制线条</a>
-      <a href="./text.html" class="item">文字</a>
-      <a href="./modelLoad.html" class="item">模型导入</a>
-      <a href="./modelSplit.html" class="item">模型拆解</a>
-      <a href="./move.html" class="item">行走</a>
+      <h2>基础</h2>
+      <div>
+        <a href="./create-a-scene.html" class="item">创建一个场景</a>
+        <a href="./line.html" class="item">绘制线条</a>
+        <a href="./text.html" class="item">文字</a>
+        <a href="./modelLoad.html" class="item">模型导入</a>
+        <a href="./raycas.html" class="item">鼠标检测触碰对象</a>
+        <a href="./move.html" class="item">行走</a>
+      </div>
+    </div>
+    <div class="items">
+      <h2>提高</h2>
+      <div>
+        <a href="./modelSplit.html" class="item">模型拆解</a>
+      </div>
     </div>
   </body>
 </html>
