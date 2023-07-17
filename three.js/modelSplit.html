@@ -51,34 +51,43 @@
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { resizeRendererToDisplaySize } from "utils/fun.js";
       import * as TWEEN from "tween";
+      // outline postprocessing
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+      import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
+      import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 
       let renderRequested = false;
 
       const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x999999);
 
       const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
       // 控制查看模型的角度
-      camera.position.set(-10, 1, 10);
+      camera.position.set(-10, 10, 10);
 
       const canvas = document.querySelector("#canvas");
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
       // 定义渲染器的输出编码
       renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-      const color = 0xffffff;
-      const intensity = 1;
-      const light = new THREE.DirectionalLight(color, intensity);
+      const light = new THREE.AmbientLight(0xffffff, 2);
       light.position.set(-1, 2, 4);
       scene.add(light);
 
       const loader = new GLTFLoader();
       loader.load("/assets/models/gltf/a-dismantling.glb", (gltf) => {
-        const model = gltf.scene;
+        const model = gltf.scene.children[0];
         console.log(model);
         // 人为的控制模型显示大小，暂未能找到合适的函数实现
         model.scale.set(0.8, 0.8, 0.8);
         scene.add(model);
-        render();
+        scene.traverse((item) => {
+          modelList.push(item);
+        });
+        animate();
       });
 
       const controls = new OrbitControls(camera, canvas);
@@ -86,18 +95,51 @@
       controls.target.set(0, 0, 0);
       controls.update();
 
-      function render() {
-        console.log("render");
+      // outline
+      const composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
+      outlinePass.edgeStrength = 5;
+      outlinePass.edgeGlow = 1;
+      outlinePass.pulsePeriod = 2;
+      outlinePass.visibleEdgeColor.set("#35f2d1");
+      outlinePass.hiddenEdgeColor.set("#00ffff");
+      composer.addPass(outlinePass);
+
+      const effectFXAA = new ShaderPass(FXAAShader);
+      effectFXAA.uniforms["resolution"].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+      composer.addPass(effectFXAA);
+
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2(1, 1);
+      const modelList = [];
+
+      function animate() {
+        console.log("animate");
         TWEEN.update();
         controls.update();
+        // 自适应宽高设置
         renderRequested = undefined;
         if (resizeRendererToDisplaySize(renderer)) {
           const canvas = renderer.domElement;
           camera.aspect = canvas.clientWidth / canvas.clientHeight;
           camera.updateProjectionMatrix();
         }
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersection = raycaster.intersectObjects(modelList);
+        if (intersection.length > 0) {
+          console.log(intersection);
+          // 给选中的物体 设置outline效果
+          outlinePass.selectedObjects = [intersection[0].object];
+        }
+        composer.render();
+        requestAnimationFrame(animate);
+      }
+      function render() {
         renderer.render(scene, camera);
-        requestAnimationFrame(render);
       }
       function requestRenderIfNotRequested() {
         // console.log('requestRenderIfNotRequested');
@@ -132,8 +174,6 @@
 
         move(scene.getObjectByName("Object_14"), { z: -5 });
         move(scene.getObjectByName("Object_16"), { z: -5 });
-
-        move(scene.getObjectByName("Object_29"), { y: 2 });
       });
       // 拆解按钮
       document.getElementById("reback").addEventListener("click", () => {
@@ -149,9 +189,14 @@
 
         move(scene.getObjectByName("Object_14"), { z: 0 });
         move(scene.getObjectByName("Object_16"), { z: 0 });
-
-        move(scene.getObjectByName("Object_29"), { y: 0 });
       });
+
+      function onMouseMove(event) {
+        event.preventDefault();
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      }
+      document.addEventListener("mousemove", onMouseMove);
     </script>
   </body>
 </html>
