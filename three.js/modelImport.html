@@ -10,32 +10,29 @@
     </style>
   </head>
   <body>
-    <div id="container"></div>
+    <div id="container">
+      <canvas id="canvas"></canvas>
+    </div>
 
     <script type="importmap">
       {
         "imports": {
           "three": "/lib/three.module.js",
-          "three/addons/": "/lib/jsm/"
+          "three/addons/": "/lib/jsm/",
+          "utils/": "/utils/"
         }
       }
     </script>
     <script type="module">
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-      import { $ } from "/utils/fun.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { $, resizeRendererToDisplaySize } from "utils/fun.js";
 
       let renderer, scene, camera;
+      let controls;
 
       function init() {
-        const container = $("#container");
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        // renderer.shadowMap.enabled = true;
-        container.appendChild(renderer.domElement);
-
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xa0a0a0);
 
@@ -45,42 +42,72 @@
           0.1,
           10000
         );
-        camera.position.z = 1000;
-        camera.rotateY = Math.PI / 2;
-        scene.add(camera);
+        camera.position.z = 10;
+        // scene.add(camera);
+
+        const color = 0xffffff;
+        const intensity = 1;
+        const light = new THREE.DirectionalLight(color, intensity);
+        light.position.set(-1, 2, 4);
+        scene.add(light);
 
         const loader = new GLTFLoader();
-        loader.load("/assets/models/gltf/Horse.glb", (gltf) => {
+        loader.load("/assets/models/gltf/1-model.glb", (gltf) => {
           const model = gltf.scene;
-          model.rotateY(Math.PI / 2);
+          // model.rotateY(Math.PI / 4);
           setScaleToFitSize(model);
-          console.log(gltf);
+          // console.log(gltf);
           scene.add(gltf.scene);
-
           render();
         });
-        window.addEventListener("resize", onWindowResize);
+
+        const canvas = $("#canvas");
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        // renderer.shadowMap.enabled = true;
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.update();
+        controls.enableDamping = true;
+
+        window.addEventListener("resize", requestRenderIfNotRequested);
+        controls.addEventListener("change", () => {
+          requestAnimationFrame(render);
+        });
       }
+      let renderRequested = false;
       function render() {
+        console.log("resize1");
+        renderRequested = false;
+        if (resizeRendererToDisplaySize(renderer)) {
+          console.log("resize2");
+          const canvas = renderer.domElement;
+          camera.aspect = canvas.clientWidth / canvas.clientHeight;
+          camera.updateProjectionMatrix();
+        }
         renderer.render(scene, camera);
       }
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+      function requestRenderIfNotRequested() {
+        if (!renderRequested) {
+          renderRequested = true;
+          requestAnimationFrame(render);
+        }
       }
-      function setScaleToFitSize(obj) {
-        const boxHelper = new THREE.BoxHelper(obj, 0xffff00);
+      function setScaleToFitSize(model) {
+        const boxHelper = new THREE.BoxHelper(model, 0xffff00);
         scene.add(boxHelper);
-        // boxHelper.geometry.computeBoundingBox();
-        // const box = boxHelper.geometry.boundingBox;
-        // const maxDiameter = Math.max(
-        //   box.max.x - box.min.x,
-        //   box.max.y - box.min.y,
-        //   box.max.z - box.min.z
-        // );
-        // const scaleValue = camera.position.z / maxDiameter;
-        // obj.scale.set(scaleValue, scaleValue, scaleValue);
+        boxHelper.geometry.computeBoundingBox();
+        const box = boxHelper.geometry.boundingBox;
+        const maxDiameter = Math.max(
+          box.max.x - box.min.x,
+          box.max.y - box.min.y,
+          box.max.z - box.min.z
+        );
+        console.log(maxDiameter);
+        const scaleValue = camera.position.z / maxDiameter;
+        model.scale.set(scaleValue, scaleValue, scaleValue);
       }
       init();
     </script>

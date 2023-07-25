@@ -28,6 +28,7 @@
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
       import { resizeRendererToDisplaySize } from "utils/fun.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
       const scene = new THREE.Scene();
 
@@ -45,10 +46,16 @@
       light.position.set(-1, 2, 4);
       scene.add(light);
 
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath("/lib/jsm/libs/draco/gltf/");
       const loader = new GLTFLoader();
-      loader.load("/assets/models/gltf/1-model.glb", (gltf) => {
+      loader.setDRACOLoader(dracoLoader);
+      loader.load("/assets/models/gltf/LittlestTokyo.glb", (gltf) => {
         const model = gltf.scene;
-        scene.add(gltf.scene);
+        model.position.set(1, 1, 0);
+        model.scale.set(0.01, 0.01, 0.01);
+        console.log(model);
+        scene.add(model);
         render();
       });
 
@@ -69,6 +76,7 @@
         renderer.render(scene, camera);
       }
       function requestRenderIfNotRequested() {
+        // 控制controls change触发次数
         if (!renderRequested) {
           renderRequested = true;
           requestAnimationFrame(render);
