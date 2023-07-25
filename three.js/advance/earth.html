@@ -31,18 +31,18 @@
       const scene = new THREE.Scene();
       // 透视相机
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 1.5;
+      camera.position.z = 15;
       // canvas和渲染器
       const canvas = document.querySelector("#canvas");
       const renderer = new THREE.WebGLRenderer({ canvas });
 
       scene.add(new THREE.AmbientLight(0x333333));
       const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(5, 3, 5);
+      light.position.set(50, 30, 50);
       scene.add(light);
 
       // 物体mesh
-      const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+      const geometry = new THREE.SphereGeometry(5, 32, 32);
       const material = new THREE.MeshPhongMaterial({
         map: new THREE.TextureLoader().load("/assets/texture/2_no_clouds_4k.jpg"),
         bumpMap: new THREE.TextureLoader().load("/assets/texture/elev_bump_4k.jpg"),
@@ -51,17 +51,18 @@
         specular: new THREE.Color("grey"),
       });
       const earth = new THREE.Mesh(geometry, material);
+      earth.rotation.set(Math.PI / 4, Math.PI * 0.9, 0);
       scene.add(earth);
-      const cloud = new THREE.Mesh(
-        new THREE.SphereGeometry(0.503, 32, 32),
-        new THREE.MeshPhongMaterial({
-          map: new THREE.TextureLoader().load("/assets/texture/fair_clouds_4k.png"),
-          transparent: true,
-        })
-      );
-      scene.add(cloud);
+      // const cloud = new THREE.Mesh(
+      //   new THREE.SphereGeometry(5.03, 32, 32),
+      //   new THREE.MeshPhongMaterial({
+      //     map: new THREE.TextureLoader().load("/assets/texture/fair_clouds_4k.png"),
+      //     transparent: true,
+      //   })
+      // );
+      // scene.add(cloud);
       const sky = new THREE.Mesh(
-        new THREE.SphereGeometry(90, 64, 64),
+        new THREE.SphereGeometry(900, 64, 64),
         new THREE.MeshBasicMaterial({
           map: new THREE.TextureLoader().load("/assets/texture/galaxy_starfield.png"),
           side: THREE.BackSide,
@@ -83,8 +84,8 @@
           camera.aspect = canvas.clientWidth / canvas.clientHeight;
           camera.updateProjectionMatrix();
         }
-        earth.rotation.y += 0.002;
-        cloud.rotation.y += 0.002;
+        // earth.rotation.y += 0.002;
+        // cloud.rotation.y += 0.002;
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
       }
